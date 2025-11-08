@@ -1,0 +1,125 @@
+/* ==========================================
+   STYLES MOBILE - RECHERCHE
+   ========================================== */
+
+@media screen and (max-width: 768px) {
+    .search-container {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: #f5f5f5;
+        padding: 10px 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .search-form {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px 15px;
+        font-size: 16px;
+        border: 2px solid #ddd;
+        border-radius: 25px;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+    }
+
+    .search-button {
+        width: 45px;
+        height: 45px;
+        border: none;
+        border-radius: 50%;
+        background: #667eea;
+        color: white;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(102,126,234,0.3);
+    }
+
+    .search-button:active {
+        transform: translateY(1px);
+    }
+
+    /* Suggestions de recherche */
+    .search-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .suggestion-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+
+    .suggestion-item img {
+        width: 40px;
+        height: 40px;
+        border-radius: 5px;
+        object-fit: cover;
+    }
+
+    .suggestion-info {
+        flex: 1;
+    }
+
+    .suggestion-name {
+        font-weight: 500;
+        margin-bottom: 3px;
+    }
+
+    .suggestion-price {
+        color: #667eea;
+        font-size: 14px;
+    }
+
+    /* Filtres mobiles */
+    .mobile-filters {
+        padding: 10px 15px;
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+    }
+
+    .filter-chip {
+        padding: 8px 15px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 14px;
+        white-space: nowrap;
+        scroll-snap-align: start;
+    }
+
+    .filter-chip.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+}

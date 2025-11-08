@@ -1,0 +1,137 @@
+/* ==========================================
+   STYLES MOBILE - PAGE CHECKOUT
+   ========================================== */
+
+@media screen and (max-width: 768px) {
+    .checkout-container {
+        padding: 15px;
+    }
+
+    .checkout-section {
+        background: white;
+        border-radius: 10px;
+        padding: 20px 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    /* Formulaire */
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .form-input:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(102,126,234,0.2);
+    }
+
+    /* Résumé commande */
+    .order-summary {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px 15px;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+
+    .summary-total {
+        font-size: 20px;
+        font-weight: bold;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px solid #ddd;
+    }
+
+    /* Bouton de paiement */
+    .payment-button {
+        width: 100%;
+        padding: 15px;
+        font-size: 18px;
+        font-weight: bold;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        margin-top: 20px;
+        box-shadow: 0 4px 6px rgba(102,126,234,0.2);
+    }
+
+    .payment-button:active {
+        transform: translateY(1px);
+    }
+
+    /* Messages */
+    .message {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 16px;
+    }
+
+    .message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Modes de paiement */
+    .payment-methods {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .payment-method {
+        padding: 15px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .payment-method.selected {
+        border-color: #667eea;
+        background: rgba(102,126,234,0.05);
+    }
+
+    .payment-method img {
+        width: 40px;
+        height: auto;
+    }
+}

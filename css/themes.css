@@ -1,0 +1,158 @@
+/* Theme palettes — each theme is applied by adding the class to <body>, e.g. <body class="theme-blue"> */
+:root{
+    --bg:#f7f7f9;
+    --panel-bg:#ffffff;
+    --text:#222222;
+    --muted:#666666;
+    --primary:#5b6ef6;
+    --accent:#ff9800;
+    --success:#28a745;
+    --danger:#e55353;
+}
+
+/* Default (light) */
+.theme-default {
+    --bg: #f7f7f9;
+    --panel-bg: #ffffff;
+    --text: #222;
+    --muted: #666;
+    --primary: #5b6ef6;
+    --accent: #ff9800;
+}
+
+/* Dark theme */
+.theme-dark {
+    --bg: #0f1720;
+    --panel-bg: #0b1116;
+    --text: #e6eef8;
+    --muted: #9aa6b2;
+    --primary: #4f46e5;
+    --accent: #fb923c;
+}
+
+/* Blue theme */
+.theme-blue {
+    --bg: #eef6ff;
+    --panel-bg: #ffffff;
+    --text: #0b2a4a;
+    --muted: #4b6b8a;
+    --primary: #0077cc;
+    --accent: #00bcd4;
+}
+
+/* Green theme */
+.theme-green {
+    --bg: #f4fbf6;
+    --panel-bg: #ffffff;
+    --text: #0b3a2b;
+    --muted: #4f6b5f;
+    --primary: #16a34a;
+    --accent: #059669;
+}
+
+/* Purple theme */
+.theme-purple {
+    --bg: #fbf7ff;
+    --panel-bg: #ffffff;
+    --text: #2b0b3a;
+    --muted: #6b4f79;
+    --primary: #7c3aed;
+    --accent: #a78bfa;
+}
+
+/* Orange theme */
+.theme-orange {
+    --bg: #fff8f1;
+    --panel-bg: #ffffff;
+    --text: #3b1f00;
+    --muted: #7a5b3a;
+    --primary: #fb923c;
+    --accent: #f97316;
+}
+
+/* High contrast */
+.theme-highcontrast {
+    --bg: #ffffff;
+    --panel-bg: #000000;
+    --text: #ffffff;
+    --muted: #cccccc;
+    --primary: #ffff00;
+    --accent: #00ffff;
+}
+
+/* Apply variables to common elements to make theme effective across site */
+/* Keep the page background white as requested; themes will affect header, panels, cards, tables, charts */
+body {
+    background: #ffffff; /* page background stays white */
+    color: var(--text);
+}
+
+.header, .nav, .stat-card, .chart-container, .top-products, .orders-status, .section, .container, table, .section-header, .settings-card {
+    background: var(--panel-bg);
+    color: var(--text);
+}
+
+.header {
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Tables and panels */
+table { background: transparent; }
+table thead th { background: transparent; }
+table tbody tr { background: var(--panel-bg); }
+
+/* Chart container ensures canvas sits on panel background */
+.chart-container canvas { background: transparent; display:block; }
+
+.nav a, .nav a.active{
+    color: var(--text);
+}
+
+.btn {
+    background: var(--primary);
+    color: #fff;
+    border-color: transparent;
+}
+
+.btn.btn-warning { background: var(--accent); }
+.btn.btn-danger { background: var(--danger); }
+
+.number { color: var(--primary); }
+
+/* small tweaks for charts (legend color etc.) */
+.chart-legend { color: var(--muted); }
+
+/* ensure tables remain readable */
+table thead th { background: transparent; color: var(--muted); }
+table td { color: var(--text); }
+
+/* links */
+a { color: var(--primary); }
+
+/* Specific layout rules for product listing (index.php) */
+/* Container background stays white so grid gaps show white between cards */
+.products-grid {
+    background: #ffffff; /* spaces between cards remain white */
+    padding: 12px;
+    border-radius: 8px;
+}
+
+/* Force article cards and filter panel to be dark (black) with readable text */
+.product-card, .filters {
+    background: #000000 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.product-card .product-info, .filters h3, .filter-buttons { color: #ffffff !important; }
+.product-card .product-title { color: #ffffff; }
+.product-card .product-description { color: #e6e6e6; }
+.product-card .product-category { color: #bfbfbf; }
+.filter-btn { background: transparent; color: #ffffff; border: 1px solid rgba(255,255,255,0.08); }
+.filter-btn.active { background: rgba(255,255,255,0.06); }
+
+/* Ensure buttons inside product-card are visible */
+.product-card .add-to-cart { background: var(--primary); color: #fff; }
+

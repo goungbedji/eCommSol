@@ -1,0 +1,87 @@
+# Protection des fichiers sensibles (compatible Apache 2.2 et 2.4)
+<FilesMatch "^(config\.php|database\.sql)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Activer le mode de réécriture
+RewriteEngine On
+
+# Rediriger vers HTTPS en production (décommenter en production)
+ RewriteCond %{HTTPS} off
+ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Protection contre les injections
+<IfModule mod_headers.c>
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "no-referrer-when-downgrade"
+</IfModule>
+
+# Limites PHP : encapsulées pour éviter une erreur 500 sur les environnements CGI/FastCGI
+# Ces directives ne sont valides que pour mod_php. Si votre hébergeur utilise FastCGI, définissez-les via le panneau PHP.
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 50M
+    php_value post_max_size 50M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+<IfModule mod_php.c>
+    php_value upload_max_filesize 50M
+    php_value post_max_size 50M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
+# Protection du dossier uploads : empêcher l'exécution de scripts uploadés
+<IfModule mod_rewrite.c>
+    # bloque les fichiers de script dans /uploads/
+    RewriteCond %{REQUEST_URI} ^/uploads/ [NC]
+    RewriteRule (?:.*) - [E=BLOCK_UPLOAD:1]
+    RewriteRule ^uploads/.*\.(php|phtml|php3|php4|php5|pl|py|jsp|asp|sh|cgi)$ - [F,L,NC]
+</IfModule>
+
+# Désactiver l'affichage des erreurs en production (si supporté)
+ <IfModule mod_php7.c>
+     php_flag display_errors Off
+     php_flag display_startup_errors Off
+ </IfModule>
+
+# Cacher la signature du serveur
+ServerSignature Off
+
+# Bloquer fichiers sensibles courants (.env, .git, composer files, backups)
+<FilesMatch "(\.env$|^\.git|composer\.json|composer\.lock|.*\.(sql|bak|old))$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Empêcher l'accès direct au dossier vendor
+<IfModule mod_rewrite.c>
+    RewriteRule ^vendor/ - [F,L,NC]
+</IfModule>
+
+# Compression GZIP
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/x-javascript
+</IfModule>
+
+# Cache du navigateur
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
