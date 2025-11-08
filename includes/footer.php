@@ -4,7 +4,7 @@ $settings = getBoutiqueSettings();
 $total_products = $GLOBALS['pdo']->query("SELECT COUNT(*) FROM articles WHERE stock > 0")->fetchColumn();
 ?>
 
-<footer class="bg-white border-t border-gray-200 mt-16">
+<footer class="bg-white border-t border-gray-200">
     
     <!-- Main Footer -->
     <div class="max-w-7xl mx-auto px-6 py-12">
