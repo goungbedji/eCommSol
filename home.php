@@ -25,6 +25,7 @@ unset($a);
 $page_title = "Bienvenue - Space E-Commerce";
 ?>
 <?php include 'includes/head.php'; ?>
+    <?php include 'includes/header.php'; ?>
     
     <?php include 'includes/sections/hero.php'; ?>
     
