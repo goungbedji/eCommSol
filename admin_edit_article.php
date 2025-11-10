@@ -2,11 +2,9 @@
 require_once 'config.php';
 requireAdmin();
 
-$success = '';
 $error = '';
 $article = null;
 
-// Récupérer l'article
 if (isset($_GET['id'])) {
     $stmt = $pdo->prepare("SELECT * FROM articles WHERE id = ?");
     $stmt->execute([$_GET['id']]);
@@ -18,7 +16,6 @@ if (isset($_GET['id'])) {
     }
 }
 
-// Traitement du formulaire
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = intval($_POST['id']);
     $titre = clean($_POST['titre']);
@@ -30,12 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $photo = $_POST['photo_url'];
     $video = clean($_POST['video_url']);
     
-    // Si aucune nouvelle photo URL, garder l'ancienne
     if (empty($photo)) {
         $photo = $article['photo'];
     }
     
-    // Gérer l'upload de photo
     if (!empty($_FILES['photo_file']['name'])) {
         $target_dir = UPLOAD_DIR;
         $file_extension = strtolower(pathinfo($_FILES['photo_file']['name'], PATHINFO_EXTENSION));
@@ -54,106 +49,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("UPDATE articles SET titre = ?, description = ?, prix = ?, photo = ?, video = ?, stock = ?, categorie_id = ? WHERE id = ?");
         $stmt->execute([$titre, $description, $prix, $photo, $video, $stock, $categorie_id, $id]);
         
-        $success = 'Article modifié avec succès !';
-        header("refresh:2;url=admin_dashboard.php");
+        $_SESSION['success_message'] = 'Article modifié avec succès !';
+        header("Location: admin_dashboard.php");
+        exit;
     } catch (Exception $e) {
         $error = 'Erreur : ' . $e->getMessage();
     }
 }
+
+$page_title = 'Modifier l\'Article - Administration';
+$admin_active = 'dashboard';
+$admin_title = 'Modifier l\'Article';
+$admin_actions = [];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modifier l'Article</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <div class="header">
-        <div class="header-content">
-            <h1>✏️ Modifier l'Article</h1>
-            <a href="admin_dashboard.php" class="back-btn">← Retour</a>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="form-container">
-            <?php if ($success): ?>
-                <div class="success"><?= $success ?></div>
-            <?php endif; ?>
-            <?php if ($error): ?>
-                <div class="error"><?= $error ?></div>
-            <?php endif; ?>
-            
-            <form method="POST" enctype="multipart/form-data">
+<?php include 'includes/admin_head.php'; ?>
+<?php include 'includes/admin_header.php'; ?>
+
+<div class="min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+        
+        <?php if ($error): ?>
+            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl">
+                <p class="text-red-700 font-semibold"><?= $error ?></p>
+            </div>
+        <?php endif; ?>
+        
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" name="id" value="<?= $article['id'] ?>">
                 
-                <div class="form-group">
-                    <label>Titre de l'article *</label>
-                    <input type="text" name="titre" value="<?= htmlspecialchars($article['titre'] ?? '') ?>" required>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Titre de l'article *</label>
+                        <input type="text" name="titre" required 
+                               value="<?= htmlspecialchars($article['titre']) ?>"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Description *</label>
+                        <textarea name="description" required rows="4"
+                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all"><?= htmlspecialchars($article['description']) ?></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Prix (FCFA) *</label>
+                        <input type="number" name="prix" step="0.01" min="0" required
+                               value="<?= $article['prix'] ?>"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Stock *</label>
+                        <input type="number" name="stock" min="0" required
+                               value="<?= $article['stock'] ?>"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Catégorie *</label>
+                        <select name="categorie_id" required
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                            <?php
+                            $categories = $pdo->query("SELECT * FROM categories ORDER BY nom")->fetchAll();
+                            foreach ($categories as $cat): ?>
+                                <option value="<?= $cat['id'] ?>" <?= $article['categorie_id'] == $cat['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($cat['nom']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Description *</label>
-                    <textarea name="description" required><?= htmlspecialchars($article['description'] ?? '') ?></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>Prix (FCFA) *</label>
-                    <input type="number" name="prix" step="0.01" min="0" value="<?= $article['prix'] ?>" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Stock *</label>
-                    <input type="number" name="stock" min="0" value="<?= $article['stock'] ?>" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Catégorie *</label>
-                    <select name="categorie_id" required>
-                        <option value="">Sélectionner une catégorie</option>
-                        <?php
-                        $categories = $pdo->query("SELECT * FROM categories ORDER BY nom")->fetchAll();
-                        foreach ($categories as $cat): ?>
-                            <option value="<?= $cat['id'] ?>" <?= (isset($article['categorie_id']) && $article['categorie_id'] == $cat['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($cat['nom'] ?? '') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Photo actuelle</label>
-                    <?php if (!empty($article['photo'])): ?>
-                        <img src="<?= htmlspecialchars($article['photo'] ?? '') ?>" class="current-image" alt="<?= htmlspecialchars($article['titre'] ?? '') ?>">
-                    <?php else: ?>
-                        <div class="note">Aucune photo</div>
+                <div class="border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Photo</h3>
+                    
+                    <?php if ($article['photo']): ?>
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 mb-2">Photo actuelle :</p>
+                            <img src="<?= htmlspecialchars($article['photo']) ?>" alt="Photo actuelle" 
+                                 class="w-32 h-32 object-cover rounded-lg border-2 border-gray-300">
+                        </div>
                     <?php endif; ?>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Photo (URL)</label>
+                            <input type="url" name="photo_url" placeholder="https://example.com/image.jpg"
+                                   value="<?= htmlspecialchars($article['photo']) ?>"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Ou upload une nouvelle photo</label>
+                            <input type="file" name="photo_file" accept="image/*"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                            <p class="text-xs text-gray-500 mt-1">Formats: JPG, PNG, GIF, WEBP</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Nouvelle Photo (URL)</label>
-                    <input type="url" name="photo_url" placeholder="https://example.com/image.jpg">
-                    <div class="note">Laissez vide pour garder l'image actuelle</div>
+                <div class="border-t border-gray-200 pt-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Vidéo (URL)</label>
+                    <input type="url" name="video_url" placeholder="https://youtube.com/watch?v=..."
+                           value="<?= htmlspecialchars($article['video']) ?>"
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
                 </div>
                 
-                <div class="form-group">
-                    <label>Nouvelle Photo (Upload fichier)</label>
-                    <input type="file" name="photo_file" accept="image/*">
-                </div>
-                
-                <div class="form-group">
-                    <label>Vidéo (URL)</label>
-                    <input type="url" name="video_url" value="<?= htmlspecialchars($article['video']) ?>" placeholder="https://youtube.com/watch?v=...">
-                </div>
-                
-                <div style="margin-top: 30px;">
-                    <button type="submit" class="btn">Enregistrer les modifications</button>
-                    <a href="admin_dashboard.php" class="btn btn-secondary">Annuler</a>
+                <div class="flex items-center gap-4 pt-6 border-t border-gray-200">
+                    <button type="submit" 
+                            class="px-8 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all">
+                        Modifier l'article
+                    </button>
+                    <a href="admin_dashboard.php" 
+                       class="px-8 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-all">
+                        Annuler
+                    </a>
                 </div>
             </form>
         </div>
     </div>
+</div>
+
 </body>
 </html>

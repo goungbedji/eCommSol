@@ -8,7 +8,7 @@ if (!$id) {
     exit;
 }
 
-$success = $error = '';
+$error = '';
 
 // Récupérer la catégorie
 $stmt = $pdo->prepare("SELECT * FROM categories WHERE id = ?");
@@ -30,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("UPDATE categories SET nom = ?, description = ? WHERE id = ?");
             $stmt->execute([$nom, $description, $id]);
-            header('Location: admin_categories.php?success=1');
+            $_SESSION['success_message'] = 'Catégorie modifiée avec succès !';
+            header('Location: admin_categories.php');
             exit;
         } catch (PDOException $e) {
             if ($e->getCode() == 23000) {
@@ -41,44 +42,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+$page_title = 'Modifier une catégorie - Administration';
+$admin_active = 'categories';
+$admin_title = 'Modifier une catégorie';
+$admin_actions = [];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modifier une catégorie - Administration</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <div class="header">
-        <div class="header-content">
-            <h1>🏷️ Modifier une catégorie</h1>
-            <a href="admin_categories.php" class="back-btn">Retour</a>
-        </div>
-    </div>
 
-    <div class="container">
+<?php include 'includes/admin_head.php'; ?>
+<?php include 'includes/admin_header.php'; ?>
+
+<div class="min-h-screen py-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6">
+        
         <?php if ($error): ?>
-            <div class="alert error"><?= htmlspecialchars($error !== null ? $error : '') ?></div>
+            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl">
+                <p class="text-red-700 font-semibold"><?= htmlspecialchars($error) ?></p>
+            </div>
         <?php endif; ?>
 
-        <form method="post" class="form">
-            <div class="form-group">
-                <label for="nom">Nom de la catégorie *</label>
-                <input type="text" id="nom" name="nom" required 
-                       value="<?= htmlspecialchars($categorie['nom']) ?>">
-            </div>
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form method="post" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nom de la catégorie *</label>
+                    <input type="text" name="nom" required 
+                           value="<?= htmlspecialchars($categorie['nom']) ?>"
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                </div>
 
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" rows="4"><?= htmlspecialchars($categorie['description']) ?></textarea>
-            </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Description</label>
+                    <textarea name="description" rows="4"
+                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all"><?= htmlspecialchars($categorie['description']) ?></textarea>
+                </div>
 
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Modifier la catégorie</button>
-            </div>
-        </form>
+                <div class="flex items-center gap-4 pt-4">
+                    <button type="submit" 
+                            class="px-8 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all">
+                        Modifier la catégorie
+                    </button>
+                    <a href="admin_categories.php" 
+                       class="px-8 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-all">
+                        Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
-</body>
-</html>
+</div>

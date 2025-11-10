@@ -2,7 +2,6 @@
 require_once 'config.php';
 requireAdmin();
 
-$success = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,23 +17,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo->beginTransaction();
         
-        // Insérer l'article
         $stmt = $pdo->prepare("INSERT INTO articles (titre, description, prix, photo, video, stock, categorie_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$titre, $description, $prix, $photo_principale, $video, $stock, $categorie_id]);
         $article_id = $pdo->lastInsertId();
         
-        // Traiter les photos
         $photos_urls = isset($_POST['photos_urls']) ? array_filter(explode("\n", $_POST['photos_urls'])) : [];
         $photos_ordre = 1;
         
-        // Ajouter la photo principale si elle existe
         if (!empty($photo_principale)) {
             $stmt = $pdo->prepare("INSERT INTO article_photos (article_id, photo_url, is_main, ordre) VALUES (?, ?, 1, ?)");
             $stmt->execute([$article_id, $photo_principale, $photos_ordre]);
             $photos_ordre++;
         }
         
-        // Ajouter les photos supplémentaires (URLs)
         foreach ($photos_urls as $url) {
             $url = trim($url);
             if (!empty($url)) {
@@ -44,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        // Traiter les uploads de fichiers multiples
         if (!empty($_FILES['photos_files']['name'][0])) {
             $target_dir = UPLOAD_DIR;
             $allowed_types = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
@@ -62,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $stmt = $pdo->prepare("INSERT INTO article_photos (article_id, photo_url, is_main, ordre) VALUES (?, ?, ?, ?)");
                             $stmt->execute([$article_id, $target_file, $is_main, $photos_ordre]);
                             
-                            // Mettre à jour la photo principale de l'article si c'est la première
                             if ($is_main) {
                                 $stmt = $pdo->prepare("UPDATE articles SET photo = ? WHERE id = ?");
                                 $stmt->execute([$target_file, $article_id]);
@@ -76,155 +69,144 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $pdo->commit();
-        $success = 'Article ajouté avec succès avec ' . ($photos_ordre - 1) . ' photo(s) !';
-        header("refresh:2;url=admin_dashboard.php");
+        $_SESSION['success_message'] = 'Article ajouté avec succès avec ' . ($photos_ordre - 1) . ' photo(s) !';
+        header("Location: admin_dashboard.php");
+        exit;
         
     } catch (Exception $e) {
         $pdo->rollBack();
         $error = 'Erreur : ' . $e->getMessage();
     }
 }
+
+$page_title = 'Ajouter un Article - Administration';
+$admin_active = 'dashboard';
+$admin_title = 'Ajouter un Article';
+$admin_actions = [];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajouter un Article</title>
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        .photos-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .photos-section h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-        .photo-preview {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .photo-preview img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 5px;
-            border: 2px solid #ddd;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="header-content">
-            <h1>➕ Ajouter un Article</h1>
-            <a href="admin_dashboard.php" class="back-btn">← Retour</a>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="form-container">
-            <?php if ($success): ?>
-                <div class="success"><?= $success ?></div>
-            <?php endif; ?>
-            <?php if ($error): ?>
-                <div class="error"><?= $error ?></div>
-            <?php endif; ?>
-            
-            <form method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Titre de l'article *</label>
-                    <input type="text" name="titre" required>
-                </div>
+<?php include 'includes/admin_head.php'; ?>
+<?php include 'includes/admin_header.php'; ?>
+
+<div class="min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+        
+        <?php if ($error): ?>
+            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl">
+                <p class="text-red-700 font-semibold"><?= $error ?></p>
+            </div>
+        <?php endif; ?>
+        
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
                 
-                <div class="form-group">
-                    <label>Description *</label>
-                    <textarea name="description" required></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>Prix (FCFA) *</label>
-                    <input type="number" name="prix" step="0.01" min="0" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Stock *</label>
-                    <input type="number" name="stock" min="0" value="0" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Catégorie *</label>
-                    <select name="categorie_id" required>
-                        <option value="">Sélectionner une catégorie</option>
-                        <?php
-                        $categories = $pdo->query("SELECT * FROM categories ORDER BY nom")->fetchAll();
-                        foreach ($categories as $cat): ?>
-                            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['nom'] ?? '') ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="photos-section">
-                    <h3>📸 Photos de l'article</h3>
-                    
-                    <div class="form-group">
-                        <label>Photo principale (URL)</label>
-                        <input type="url" name="photo_url" placeholder="https://example.com/image.jpg">
-                        <div class="note">Cette photo sera affichée en premier dans la boutique</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Titre de l'article *</label>
+                        <input type="text" name="titre" required 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
                     </div>
                     
-                    <div class="form-group">
-                        <label>Photos supplémentaires (URLs) - Une URL par ligne</label>
-                        <textarea name="photos_urls" rows="4" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg&#10;https://example.com/image3.jpg"></textarea>
-                        <div class="note">Ajoutez plusieurs URLs, une par ligne</div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Description *</label>
+                        <textarea name="description" required rows="4"
+                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all"></textarea>
                     </div>
                     
-                    <div class="form-group">
-                        <label>Upload de photos (Multiple)</label>
-                        <input type="file" name="photos_files[]" accept="image/*" multiple id="photosInput">
-                        <div class="note">Vous pouvez sélectionner plusieurs images à la fois (Ctrl+Clic)</div>
-                        <div class="note">Formats acceptés: JPG, PNG, GIF, WEBP</div>
-                        <div id="photoPreview" class="photo-preview"></div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Prix (FCFA) *</label>
+                        <input type="number" name="prix" step="0.01" min="0" required
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Stock *</label>
+                        <input type="number" name="stock" min="0" value="0" required
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Catégorie *</label>
+                        <select name="categorie_id" required
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                            <option value="">Sélectionner une catégorie</option>
+                            <?php
+                            $categories = $pdo->query("SELECT * FROM categories ORDER BY nom")->fetchAll();
+                            foreach ($categories as $cat): ?>
+                                <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Vidéo (URL YouTube, etc.)</label>
-                    <input type="url" name="video_url" placeholder="https://youtube.com/watch?v=...">
+                <div class="border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Photos</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Photo principale (URL)</label>
+                            <input type="url" name="photo_url" placeholder="https://example.com/image.jpg"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                            <p class="text-xs text-gray-500 mt-1">Cette photo sera affichée en premier</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Photos supplémentaires (URLs)</label>
+                            <textarea name="photos_urls" rows="3" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                                      class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all"></textarea>
+                            <p class="text-xs text-gray-500 mt-1">Une URL par ligne</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Upload de photos</label>
+                            <input type="file" name="photos_files[]" accept="image/*" multiple id="photosInput"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                            <p class="text-xs text-gray-500 mt-1">Formats: JPG, PNG, GIF, WEBP</p>
+                            <div id="photoPreview" class="flex gap-2 flex-wrap mt-3"></div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div style="margin-top: 30px;">
-                    <button type="submit" class="btn">Ajouter l'article</button>
-                    <a href="admin_dashboard.php" class="btn btn-secondary">Annuler</a>
+                <div class="border-t border-gray-200 pt-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Vidéo (URL)</label>
+                    <input type="url" name="video_url" placeholder="https://youtube.com/watch?v=..."
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-all">
+                </div>
+                
+                <div class="flex items-center gap-4 pt-6 border-t border-gray-200">
+                    <button type="submit" 
+                            class="px-8 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all">
+                        Ajouter l'article
+                    </button>
+                    <a href="admin_dashboard.php" 
+                       class="px-8 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-all">
+                        Annuler
+                    </a>
                 </div>
             </form>
         </div>
     </div>
-    
-    <script>
-        // Prévisualisation des images uploadées
-        document.getElementById('photosInput').addEventListener('change', function(e) {
-            const preview = document.getElementById('photoPreview');
-            preview.innerHTML = '';
-            
-            const files = e.target.files;
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        preview.appendChild(img);
-                    }
-                    reader.readAsDataURL(file);
+</div>
+
+<script>
+    document.getElementById('photosInput').addEventListener('change', function(e) {
+        const preview = document.getElementById('photoPreview');
+        preview.innerHTML = '';
+        
+        const files = e.target.files;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'w-24 h-24 object-cover rounded-lg border-2 border-gray-300';
+                    preview.appendChild(img);
                 }
+                reader.readAsDataURL(file);
             }
-        });
-    </script>
+        }
+    });
+</script>
+
 </body>
 </html>
