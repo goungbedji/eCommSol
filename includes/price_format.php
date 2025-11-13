@@ -1,19 +1,28 @@
 <?php
 function formatPriceWithPromo($article) {
-    $promo = applyPromotionToArticle($article);
+    // Utiliser original_price si elle existe (elle a été stockée dans index.php)
+    // Sinon recalculer via applyPromotionToArticle()
+    if (isset($article['original_price']) && isset($article['promo_label'])) {
+        // Les données de promo ont déjà été calculées et stockées dans l'article
+        $original = (float)$article['original_price'];
+        $reduced = (float)$article['prix'];
+    } else {
+        // Recalculer au cas où
+        $promo = applyPromotionToArticle($article);
+        $original = $promo['original_price'];
+        $reduced = $promo['price'];
+    }
     
-    $html = '<div class="price-container">';
+    $html = '<div class="flex flex-col gap-1">';
     
-    if ($promo['price'] < $promo['original_price']) {
-        // Prix barré
-        $html .= '<span class="price-original">' . number_format($promo['original_price'], 2) . '€</span>';
-        // Prix promotionnel
-        $html .= '<span class="price-promo">' . number_format($promo['price'], 2) . '€</span>';
-        // Badge promo
-        $html .= '<span class="promo-badge">PROMO -' . number_format($promo['discount_percent']) . '%</span>';
+    if ($reduced < $original) {
+        // Prix barré (original)
+        $html .= '<span class="text-sm text-gray-500 line-through">' . formatPrice($original) . '</span>';
+        // Prix promotionnel (réduit)
+        $html .= '<span class="text-lg font-bold text-primary">' . formatPrice($reduced) . '</span>';
     } else {
         // Prix normal
-        $html .= '<span class="price-normal">' . number_format($promo['price'], 2) . '€</span>';
+        $html .= '<span class="text-lg font-bold text-gray-900">' . formatPrice($reduced) . '</span>';
     }
     
     $html .= '</div>';

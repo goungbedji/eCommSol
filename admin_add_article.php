@@ -45,24 +45,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             foreach ($_FILES['photos_files']['name'] as $key => $filename) {
                 if (!empty($filename)) {
+                    $tmpName = $_FILES['photos_files']['tmp_name'][$key];
                     $file_extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-                    
-                    if (in_array($file_extension, $allowed_types)) {
-                        $new_filename = uniqid() . '_' . $key . '.' . $file_extension;
-                        $target_file = $target_dir . $new_filename;
-                        
-                        if (move_uploaded_file($_FILES['photos_files']['tmp_name'][$key], $target_file)) {
-                            $is_main = (empty($photo_principale) && $photos_ordre == 1) ? 1 : 0;
-                            $stmt = $pdo->prepare("INSERT INTO article_photos (article_id, photo_url, is_main, ordre) VALUES (?, ?, ?, ?)");
-                            $stmt->execute([$article_id, $target_file, $is_main, $photos_ordre]);
-                            
-                            if ($is_main) {
-                                $stmt = $pdo->prepare("UPDATE articles SET photo = ? WHERE id = ?");
-                                $stmt->execute([$target_file, $article_id]);
-                            }
-                            
-                            $photos_ordre++;
+
+                    // Basic checks: is uploaded file and size limit
+                    if (!is_uploaded_file($tmpName)) {
+                        continue;
+                    }
+                    if (isset($_FILES['photos_files']['size'][$key]) && $_FILES['photos_files']['size'][$key] > MAX_UPLOAD_SIZE) {
+                        // skip oversized file
+                        continue;
+                    }
+
+                    // Validate extension first
+                    if (!in_array($file_extension, $allowed_types)) {
+                        continue;
+                    }
+
+                    // Validate actual image content (getimagesize) and MIME type
+                    $check = @getimagesize($tmpName);
+                    if ($check === false) {
+                        continue;
+                    }
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mime = finfo_file($finfo, $tmpName);
+                    finfo_close($finfo);
+                    $allowed_mimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    if (!in_array($mime, $allowed_mimes)) {
+                        continue;
+                    }
+
+                    $new_filename = uniqid() . '_' . $key . '.' . $file_extension;
+                    $target_file = $target_dir . $new_filename;
+
+                    if (move_uploaded_file($tmpName, $target_file)) {
+                        // set safe permissions
+                        @chmod($target_file, 0644);
+
+                        $is_main = (empty($photo_principale) && $photos_ordre == 1) ? 1 : 0;
+                        $stmt = $pdo->prepare("INSERT INTO article_photos (article_id, photo_url, is_main, ordre) VALUES (?, ?, ?, ?)");
+                        $stmt->execute([$article_id, $target_file, $is_main, $photos_ordre]);
+
+                        if ($is_main) {
+                            $stmt = $pdo->prepare("UPDATE articles SET photo = ? WHERE id = ?");
+                            $stmt->execute([$target_file, $article_id]);
                         }
+
+                        $photos_ordre++;
                     }
                 }
             }

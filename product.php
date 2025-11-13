@@ -233,11 +233,14 @@ $page_title = htmlspecialchars($article['titre'] ?? 'Produit') . ' - ' . htmlspe
             
             localStorage.setItem('cart', JSON.stringify(cart));
             
-            // Update cart count
-            if (document.getElementById('cartCount')) {
-                const count = cart.reduce((total, item) => total + item.quantity, 0);
-                document.getElementById('cartCount').textContent = count;
-            }
+                // Update cart count
+                if (document.getElementById('cartCount')) {
+                    const count = cart.reduce((total, item) => total + item.quantity, 0);
+                    document.getElementById('cartCount').textContent = count;
+                }
+
+                // Show success toast for 2 seconds
+                showToast('Produit ajouté au panier');
         }
         
         function changeImage(imageUrl, thumbnail) {
@@ -275,6 +278,32 @@ $page_title = htmlspecialchars($article['titre'] ?? 'Produit') . ' - ' . htmlspe
                 closeImageModal();
             }
         });
+
+        // Toast helper
+        function showToast(message) {
+            let toast = document.getElementById('addCartToast');
+            if (!toast) {
+                // Create toast if it doesn't exist (fallback)
+                toast = document.createElement('div');
+                toast.id = 'addCartToast';
+                toast.setAttribute('role', 'status');
+                toast.setAttribute('aria-live', 'polite');
+                toast.className = 'fixed top-6 right-6 z-50 bg-green-600 text-white px-4 py-2 rounded-xl shadow-lg opacity-0 transition-opacity duration-200';
+                document.body.appendChild(toast);
+            }
+
+            toast.textContent = message;
+            // show
+            toast.style.opacity = '1';
+            toast.classList.remove('opacity-0');
+
+            // hide after 2 seconds
+            clearTimeout(toast._timeoutId);
+            toast._timeoutId = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.classList.add('opacity-0');
+            }, 2000);
+        }
     </script>
 </body>
 </html>

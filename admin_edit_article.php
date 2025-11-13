@@ -33,14 +33,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (!empty($_FILES['photo_file']['name'])) {
         $target_dir = UPLOAD_DIR;
+        $tmpName = $_FILES['photo_file']['tmp_name'];
         $file_extension = strtolower(pathinfo($_FILES['photo_file']['name'], PATHINFO_EXTENSION));
         $new_filename = uniqid() . '.' . $file_extension;
         $target_file = $target_dir . $new_filename;
-        
+
         $allowed_types = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        if (in_array($file_extension, $allowed_types)) {
-            if (move_uploaded_file($_FILES['photo_file']['tmp_name'], $target_file)) {
-                $photo = $target_file;
+        // Basic checks
+        if (is_uploaded_file($tmpName) && in_array($file_extension, $allowed_types) && (!isset($_FILES['photo_file']['size']) || $_FILES['photo_file']['size'] <= MAX_UPLOAD_SIZE)) {
+            $check = @getimagesize($tmpName);
+            if ($check !== false) {
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $tmpName);
+                finfo_close($finfo);
+                $allowed_mimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (in_array($mime, $allowed_mimes)) {
+                    if (move_uploaded_file($tmpName, $target_file)) {
+                        @chmod($target_file, 0644);
+                        $photo = $target_file;
+                    }
+                }
             }
         }
     }

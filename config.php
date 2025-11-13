@@ -1,9 +1,9 @@
 <?php
 // Configuration de la base de données
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'ecommerce_db');
+define('DB_HOST', 'sql203.infinityfree.com');
+define('DB_USER', 'if0_40340701');
+define('DB_PASS', 'tpWUtKrSLpVV');
+define('DB_NAME', 'if0_40340701_ecommerce_db');
 
 // Configuration des emails
 define('SMTP_HOST', 'smtp.gmail.com');
@@ -15,13 +15,25 @@ define('SMTP_PASS', 'llaechikhdtfhhoj');
 define('UPLOAD_DIR', 'uploads/');
 
 // Activer les erreurs en développement, désactiver en production
-// NOTE: Ceci est temporaire pour le debug. Remettez à 0 en production.
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// NOTE: En production, display_errors doit être 0. Garder log_errors activé.
+// Pour basculer entre 'development' et 'production', définissez une variable d'environnement
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', 0);
+    ini_set('display_startup_errors', 0);
+    error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
+}
 // Activer la journalisation des erreurs dans un fichier local pour consultation côté serveur
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . DIRECTORY_SEPARATOR . 'php-error.log');
+
+// Taille maximale autorisée pour les uploads (en octets). 5MB par défaut.
+if (!defined('MAX_UPLOAD_SIZE')) {
+    define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024);
+}
 
 // Créer le dossier uploads s'il n'existe pas (chemin absolu pour éviter les problèmes de CWD)
 $uploadDirPath = __DIR__ . DIRECTORY_SEPARATOR . UPLOAD_DIR;
@@ -131,7 +143,24 @@ function sendAdminNotification($subject, $message) {
     }
 }
 
-// Démarrer la session
+// Sécuriser les cookies de session puis démarrer la session
+$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+if (PHP_VERSION_ID >= 70300) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '',
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+} else {
+    // Fallback compatible : définir quelques options via ini et session_set_cookie_params
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_secure', $secure ? 1 : 0);
+    // Note: session.cookie_samesite may not be supported on older PHP
+    @session_set_cookie_params(0, '/', isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '', $secure, true);
+}
 session_start();
 
 // Fonction pour vérifier si l'admin est connecté
@@ -298,7 +327,8 @@ function validateCouponCode($code) {
 function incrementCouponUsage($code) {
     global $pdo;
     try {
-        $stmt = $pdo->prepare("UPDATE coupons SET used_count = used_count + 1, times_used = used_count + 1 WHERE code = ?");
+        // Incrémenter correctement les deux compteurs de façon atomique
+        $stmt = $pdo->prepare("UPDATE coupons SET used_count = used_count + 1, times_used = times_used + 1 WHERE code = ?");
         return $stmt->execute([$code]);
     } catch (Exception $e) {
         return false;
